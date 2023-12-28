@@ -1,0 +1,27 @@
+[package]
+authors = ["rrwalton <18407128+rrwalton@users.noreply.github.com>"]
+edition = "2018"
+readme = "README.md"
+name = "ay-driver"
+version = "0.1.0"
+
+[dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.3"
+embedded-hal = "0.2.7"
+panic-halt = "0.2.0"
+panic-semihosting = "0.6.0"
+
+[dependencies.stm32l4xx-hal]
+version = "0.7.1"
+features = ["stm32l475"]
+
+[[bin]]
+name = "ay-driver"
+test = false
+bench = false
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = true
