@@ -19,8 +19,8 @@ panic-semihosting = "0.6.0"
 version = "0.7.1"
 features = ["stm32l475"]
 
-[[bin]]
-name = "ay-driver"
+[[example]]
+name = "stm32l475"
 test = false
 bench = false
 
