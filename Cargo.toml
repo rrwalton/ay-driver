@@ -6,13 +6,16 @@ name = "ay-driver"
 version = "0.1.0"
 
 [dependencies]
+bitfield = "0.14.0"
+embedded-hal = "0.2.7"
+
+[dev-dependencies]
 cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
-embedded-hal = "0.2.7"
 panic-halt = "0.2.0"
 panic-semihosting = "0.6.0"
 
-[dependencies.stm32l4xx-hal]
+[dev-dependencies.stm32l4xx-hal]
 version = "0.7.1"
 features = ["stm32l475"]
 
