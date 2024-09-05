@@ -6,13 +6,12 @@ extern crate cortex_m;
 
 use panic_halt as _;
 
-use stm32l4xx_hal as hal;
+use stm32f4xx_hal as hal;
 
 use ay_driver::ay38910;
 use cortex_m_rt::{entry, exception, ExceptionFrame};
 use embedded_hal::spi::{Mode, Phase, Polarity};
-use hal::delay::Delay;
-use hal::prelude::*;
+use hal::{pac, prelude::*, spi::*};
 
 /// SPI mode
 pub const MODE: Mode = Mode {
@@ -22,54 +21,30 @@ pub const MODE: Mode = Mode {
 
 #[entry]
 fn main() -> ! {
-    let cp = cortex_m::Peripherals::take().unwrap();
-    let dp = hal::stm32::Peripherals::take().unwrap();
+    let _cp = cortex_m::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
 
-    let mut flash = dp.FLASH.constrain();
-    let mut rcc = dp.RCC.constrain();
-    let mut pwr = dp.PWR.constrain(&mut rcc.apb1r1);
-
+    let rcc = dp.RCC.constrain();
     let clocks = rcc
         .cfgr
         .sysclk(80.MHz())
         .pclk1(80.MHz())
         .pclk2(80.MHz())
-        .freeze(&mut flash.acr, &mut pwr);
+        .freeze();
 
-    let mut gpioa = dp.GPIOA.split(&mut rcc.ahb2);
-    let sck = gpioa
-        .pa5
-        .into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrl);
-    let miso = gpioa
-        .pa6
-        .into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrl);
-    let mosi = gpioa
-        .pa7
-        .into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrl);
+    let gpioa = dp.GPIOA.split();
+    let sck = gpioa.pa5.into_alternate();
+    let miso = gpioa.pa6.into_alternate();
+    let mosi = gpioa.pa7.into_alternate();
 
-    let latch = gpioa
-        .pa4
-        .into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
+    let spi = Spi::new(dp.SPI1, (sck, miso, mosi), MODE, 4.MHz(), &clocks);
 
-    let spi = hal::spi::Spi::spi1(
-        dp.SPI1,
-        (sck, miso, mosi),
-        MODE,
-        4.MHz(),
-        clocks,
-        &mut rcc.apb2,
-    );
+    let latch = gpioa.pa4.into_push_pull_output();
 
-    let mut gpiob = dp.GPIOB.split(&mut rcc.ahb2);
-    let bdir = gpiob
-        .pb1
-        .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-    let bc1 = gpiob
-        .pb2
-        .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-    let bc2 = gpiob
-        .pb4
-        .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+    let gpiob = dp.GPIOB.split();
+    let bdir = gpiob.pb1.into_push_pull_output();
+    let bc1 = gpiob.pb2.into_push_pull_output();
+    let bc2 = gpiob.pb4.into_push_pull_output();
 
     let mut ay = ay38910::Driver::new(spi, latch, bdir, bc1, bc2);
 
@@ -107,13 +82,15 @@ fn main() -> ! {
         freq: 880,
     });
 
-    let mut timer = Delay::new(cp.SYST, clocks);
+    let mut timer = dp.TIM5.delay_us(&clocks);
+
     let mut current_freq = 0;
     let freqs = [440, 660, 220, 880];
+
     loop {
         timer.delay_ms(500_u32);
 
-        current_freq = (current_freq + 1) % 4;
+        current_freq = (current_freq + 1) % freqs.len();
         ay.write(ay38910::ToneControl {
             chan: ay38910::Channel::A,
             freq: freqs[current_freq],
@@ -123,7 +100,7 @@ fn main() -> ! {
 
         ay.write(ay38910::ToneControl {
             chan: ay38910::Channel::A,
-            freq: freqs[(current_freq + 1) % 4],
+            freq: freqs[(current_freq + 1) % freqs.len()],
         });
     }
 }
