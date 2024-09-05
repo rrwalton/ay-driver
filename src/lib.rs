@@ -171,7 +171,7 @@ pub mod ay38910 {
     impl<Bus: spi::Write<u8>, LatchPin: OutputPin> AddressBus<Bus, LatchPin> {
         pub fn write(&mut self, data: u8) {
             let _ = self.latch.set_low();
-            let _ = self.bus.write(&mut [data]);
+            let _ = self.bus.write(&[data]);
             let _ = self.latch.set_high();
         }
     }
