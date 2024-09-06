@@ -14,14 +14,21 @@ cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
 panic-halt = "0.2.0"
 panic-semihosting = "0.6.0"
+usbd-midi = "0.3.0"
+usb-device = "0.3"
 
 [dev-dependencies.stm32f4xx-hal]
 version = "0.21.0"
-features = ["stm32f412"]
+features = ["stm32f412", "usb_fs"]
 default-features = false
 
 [[example]]
 name = "notegen"
+test = false
+bench = false
+
+[[example]]
+name = "usbmidi"
 test = false
 bench = false
 
